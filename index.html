@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Schere, Stein, Papier</title>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; margin-top: 30px; }
+    video { border: 2px solid #444; border-radius: 10px; }
+    #result { font-size: 2em; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>Schere, Stein, Papier erkennen</h1>
+  <div id="webcam-container"></div>
+  <div id="result">Ergebnis wird geladen...</div>
+
+  <script>
+    const URL = "https://teachablemachine.withgoogle.com/models/Y9wpBnpE6/";
+    let model, webcam;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+      webcam = new tmImage.Webcam(300, 300, true); // width, height, flip
+      await webcam.setup();
+      await webcam.play();
+      window.requestAnimationFrame(loop);
+
+      document.getElementById("webcam-container").appendChild(webcam.canvas);
+    }
+
+    async function loop() {
+      webcam.update();
+      await predict();
+      window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+      const predictions = await model.predict(webcam.canvas);
+      predictions.sort((a, b) => b.probability - a.probability);
+      const bestGuess = predictions[0];
+      document.getElementById("result").innerText =
+        `Erkannt: ${bestGuess.className} (${(bestGuess.probability * 100).toFixed(1)}%)`;
+    }
+
+    init();
+  </script>
+
+</body>
+</html>
